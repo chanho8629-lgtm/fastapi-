@@ -6,8 +6,9 @@
 | 3 | 작품 성과 예측 | 회귀 모델 기반 조회수 예측 |
 | 4 | 유사도 추천 | 텍스트 전처리 + TF-IDF 추천 |
 | 5 | 경매 RAG 분석 | Fast 모드/Hybrid RAG 모드 분리 |
-| 6 | 데이터 분석/운영 | 지표 설계, 성능 측정, 개선 루프 |
-| 7 | 발표 흐름 요약 | 전체 구조 재정리 |
+| 6 | API 기반 데이터분석 그래프 | 예측/추천/경매 결과를 시각화 |
+| 7 | 데이터 분석/운영 | 지표 설계, 성능 측정, 개선 루프 |
+| 8 | 발표 흐름 요약 | 전체 구조 재정리 |
 
 # FastAPI AI 핵심 코드 발표 정리
 
@@ -160,7 +161,25 @@ async def analyze(self, request: AuctionRagAnalyzeRequest) -> AuctionRagAnalyzeR
 
 빠른 모드와 RAG 모드를 분리해서, 즉시 응답과 문서 기반 정밀 분석을 모두 지원합니다.
 
-## 6. 데이터 분석/운영
+## 6. API 기반 데이터분석 그래프
+
+![API 기반 데이터분석 그래프](assets/fastapi-slide-10.png)
+
+원본: `router/work.py`, `service/work_service.py`
+
+```python
+@router.post("/work/predict-views")
+async def predict_views(features: WorkRegressionFeatures):
+    result = await work_service.predict_views(features)
+    return {"predicted_views": result.predicted_views}
+
+# 프론트/리포트 서버에서 API 응답을 받아 차트 데이터로 변환
+# x축: 날짜, y축: predicted_views 또는 CTR
+```
+
+예측 API 응답을 시간축으로 누적해 조회수 추이 그래프를 만들고, 추천 CTR과 경매 응답시간을 함께 시각화해 의사결정에 사용합니다.
+
+## 7. 데이터 분석/운영
 
 ![데이터 분석 및 운영 지표](assets/fastapi-slide-13.png)
 
@@ -174,12 +193,5 @@ auction_report = await rag.aquery(rag_query, mode="hybrid")
 
 운영에서는 예측값 정확도(MAE/RMSE), 추천 반응률(CTR), RAG 응답시간/재현율 같은 지표를 함께 보며 모델과 프롬프트를 반복 개선합니다.
 
-## 7. 발표 흐름 요약
-
-1. 기획 단계에서 AI 기능을 FastAPI로 분리하고 기능별 라우터를 설계했습니다.
-2. 이미지 생성은 생성, 분석, S3 저장을 한 번에 묶어 처리합니다.
-3. 작품 예측은 저장된 pkl 모델과 feature 순서를 그대로 사용합니다.
-4. 추천은 텍스트 유사도 기반으로 후보를 정렬합니다.
-5. 경매 분석은 빠른 모드와 RAG 정밀 모드를 분리했습니다.
-6. 운영 단계에서 정확도/반응률/지연시간 지표로 지속 개선합니다.
+7. 운영 단계에서 정확도/반응률/지연시간 지표로 지속 개선합니다.
 
