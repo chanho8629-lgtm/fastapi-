@@ -1,6 +1,7 @@
 | 순서 | 섹션 | 핵심 내용 |
 |---|---|---|
 | 0 | 서비스/모델 기획 | 문제 정의, API 분리 이유, 모델 선택 기준 |
+| 0-1 | 기획 배경 데이터 분석 | 시장/사용자/크리에이터 현황 그래프 |
 | 1 | FastAPI AI 서버 역할 | Spring 연동 구조와 라우터 분리 |
 | 2 | 이미지 생성 및 분석 | 생성-분석-S3 저장 파이프라인 |
 | 3 | 작품 성과 예측 | 회귀 모델 기반 조회수 예측 |
@@ -33,6 +34,15 @@ app.include_router(auction_rag.router)
 ```
 
 AI 기능을 FastAPI로 분리해 배포 단위를 나누고, 기능별 라우터/서비스를 분리해 확장성과 장애 격리를 확보한 구조입니다.
+
+### 기획 배경 데이터 분석 그래프
+
+![시장 성장 추이](assets/data-bideo-market-growth.png)
+![숏폼 서비스 이용률](assets/data-bideo-usage-rate.png)
+![모바일 콘텐츠 핵심 비중](assets/data-bideo-mobile-content-core.png)
+![크리에이터 문제 요약](assets/data-bideo-creator-problem-summary.png)
+
+시장 성장, 이용률, 모바일 중심 소비, 크리에이터 pain point를 먼저 확인하고 AI 기능 우선순위를 정한 흐름입니다.
 
 ## 1. FastAPI AI 서버 역할
 
@@ -182,6 +192,9 @@ async def predict_views(features: WorkRegressionFeatures):
 ## 7. 데이터 분석/운영
 
 ![데이터 분석 및 운영 지표](assets/fastapi-slide-13.png)
+![회귀 성능 분석 1](chart_images/Bideo-회귀_chart_2.png)
+![회귀 성능 분석 2](chart_images/Bideo-회귀_chart_4.png)
+![분류 성능 분석](chart_images/bideo-분류_chart_3.png)
 
 원본: `service/work_service.py`, `service/work_recommend_service.py`, `service/auction_rag_service.py`
 
@@ -192,6 +205,15 @@ auction_report = await rag.aquery(rag_query, mode="hybrid")
 ```
 
 운영에서는 예측값 정확도(MAE/RMSE), 추천 반응률(CTR), RAG 응답시간/재현율 같은 지표를 함께 보며 모델과 프롬프트를 반복 개선합니다.
+회귀 그래프는 예측값-실측값 오차를 검증하고, 분류 그래프는 클래스별 편향 여부를 확인해 feature와 전처리를 개선하는 기준으로 사용합니다.
 
+## 8. 발표 흐름 요약
+
+1. 기획 단계에서 AI 기능을 FastAPI로 분리하고 기능별 라우터를 설계했습니다.
+2. 이미지 생성은 생성, 분석, S3 저장을 한 번에 묶어 처리합니다.
+3. 작품 예측은 저장된 pkl 모델과 feature 순서를 그대로 사용합니다.
+4. 추천은 텍스트 유사도 기반으로 후보를 정렬합니다.
+5. 경매 분석은 빠른 모드와 RAG 정밀 모드를 분리했습니다.
+6. API 응답을 그래프로 시각화해 기능별 성과를 비교합니다.
 7. 운영 단계에서 정확도/반응률/지연시간 지표로 지속 개선합니다.
 
