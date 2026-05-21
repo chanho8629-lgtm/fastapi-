@@ -1,219 +1,133 @@
-| 순서 | 섹션 | 핵심 내용 |
-|---|---|---|
-| 0 | 서비스/모델 기획 | 문제 정의, API 분리 이유, 모델 선택 기준 |
-| 0-1 | 기획 배경 데이터 분석 | 시장/사용자/크리에이터 현황 그래프 |
-| 1 | FastAPI AI 서버 역할 | Spring 연동 구조와 라우터 분리 |
-| 2 | 이미지 생성 및 분석 | 생성-분석-S3 저장 파이프라인 |
-| 3 | 작품 성과 예측 | 회귀 모델 기반 조회수 예측 |
-| 4 | 유사도 추천 | 텍스트 전처리 + TF-IDF 추천 |
-| 5 | 경매 RAG 분석 | Fast 모드/Hybrid RAG 모드 분리 |
-| 6 | API 기반 데이터분석 그래프 | 예측/추천/경매 결과를 시각화 |
-| 7 | 데이터 분석/운영 | 지표 설계, 성능 측정, 개선 루프 |
-| 8 | 발표 흐름 요약 | 전체 구조 재정리 |
+| 순서 | 섹션 | 핵심 내용 | 그래프/자료 |
+|---|---|---|---|
+| 1 | 기획 배경 | 시장성, 이용행태, 창작자 문제 정의 | `assets/data-bideo-*.png` |
+| 2 | 데이터셋/피처 설계 | 학습 데이터 구성, 분포/상관 분석 | `Bideo-회귀_chart_1~3` |
+| 3 | 분류 모델 | 저조회수/고조회수 분류, 임계값 조정 | `bideo-분류_chart_5/22/24` |
+| 4 | 회귀 모델 | 조회수 예측, 오차/중요 피처 분석 | `Bideo-회귀_chart_4/5/6` |
+| 5 | 유사도 추천 | Kiwi + TF-IDF 기반 콘텐츠 매칭 | `fastapi-slide-12.png` |
+| 6 | LLM/RAG 분석 | Fast 모드 vs Hybrid RAG 모드 | `fastapi-slide-13.png` |
+| 7 | 모델 비교/운영 | 기능별 모델 선택 기준과 운영 지표 | 비교표 + API 지표 |
 
-# FastAPI AI 핵심 코드 발표 정리
+# FastAPI AI 핵심 코드 발표 정리 (BIDEO 서비스 맞춤)
 
-> 기준 문서: `발표/README.md`의 FastAPI AI 섹션  
 > 기준 프로젝트: `fastapi/workspaes/basic`  
-> 방향: AI 기능별 대표 이미지 1개와 핵심 코드만 짧게 정리
+> 목적: BIDEO 서비스의 AI 기능을 기획 근거부터 모델 비교까지 발표 순서로 한 번에 설명
 
-## 0. 서비스/모델 기획
+## 1. 기획 배경 데이터 분석
 
-![서비스 기획과 모델 설계](assets/fastapi-slide-08.png)
+![콘텐츠 시장 성장](assets/data-bideo-market-growth.png)
+![OTT 이용률/유료 이용](assets/data-bideo-usage-rate.png)
+![모바일/숏폼 소비 구조](assets/data-bideo-mobile-content-core.png)
+![창작자 수익 집중 문제](assets/data-bideo-creator-problem-summary.png)
 
-원본: `main.py`, `router/*.py`, `service/*.py`
+- 시장 성장과 OTT 유료화 확대를 근거로 영상 콘텐츠 거래 서비스 타당성을 확보했습니다.
+- 모바일/숏폼 중심 소비 패턴을 반영해 피드형 UX와 빠른 추천 응답을 우선 요구사항으로 잡았습니다.
+- 창작자 수익 집중 문제를 해결하기 위해 조회수 외에 경매/결제 기반 수익모델을 함께 설계했습니다.
 
-```python
-from router import product, ai, work, gallery, auction_rag
+## 2. 데이터셋과 피처 설계
 
-app = FastAPI(lifespan=lifespan)
-app.include_router(ai.router)
-app.include_router(work.router)
-app.include_router(gallery.router)
-app.include_router(auction_rag.router)
-```
+원본: `data-analysis/retrain_bideo_from_csv.py`, `data-analysis/retrain_bideo_from_db.py`
 
-AI 기능을 FastAPI로 분리해 배포 단위를 나누고, 기능별 라우터/서비스를 분리해 확장성과 장애 격리를 확보한 구조입니다.
-
-### 기획 배경 데이터 분석 그래프
-
-![시장 성장 추이](assets/data-bideo-market-growth.png)
-![숏폼 서비스 이용률](assets/data-bideo-usage-rate.png)
-![모바일 콘텐츠 핵심 비중](assets/data-bideo-mobile-content-core.png)
-![크리에이터 문제 요약](assets/data-bideo-creator-problem-summary.png)
-
-시장 성장, 이용률, 모바일 중심 소비, 크리에이터 pain point를 먼저 확인하고 AI 기능 우선순위를 정한 흐름입니다.
-
-## 1. FastAPI AI 서버 역할
-
-![FastAPI AI 서버 역할](assets/fastapi-slide-08.png)
-
-원본: `main.py`
+![회귀 EDA: 산점도](chart_images/Bideo-회귀_chart_1.png)
+![회귀 EDA: 상관행렬](chart_images/Bideo-회귀_chart_2.png)
+![회귀 EDA: 분포](chart_images/Bideo-회귀_chart_3.png)
 
 ```python
-from router import product, ai, work, gallery, auction_rag
-
-app = FastAPI(lifespan=lifespan)
-app.include_router(product.router)   # 기본 AI 기능을 연결합니다 / legacy product domain과의 하위 호환 라우팅입니다.
-app.include_router(ai.router)        # 이미지 생성과 분석 엔드포인트를 묶었습니다 / image generation, vision analysis, orchestration router입니다.
-app.include_router(work.router)      # 작품 성과 예측을 연결했습니다 / regression, classification inference endpoint입니다.
-app.include_router(gallery.router)   # 예술관 추천을 연결했습니다 / content-based similarity recommendation router입니다.
-app.include_router(auction_rag.router) # 경매 분석을 연결했습니다 / auction domain RAG pipeline router입니다.
+# 서비스 입력 -> 모델 피처 벡터 정렬
+feature_dict = features.model_dump()
+values = [feature_dict[name] for name in self.work_regressor_features]
+prediction = self.work_regressor.predict([values])
 ```
 
-Spring Boot가 무거운 AI 작업을 직접 처리하지 않고, FastAPI가 전담하는 구조입니다.
+- 회귀/분류 공통으로 `likes`, `comments`, `shares`, `watch_completion_rate`, `ai_quality_score` 등 참여/품질 피처를 사용합니다.
+- 로그 변환(`log_likes`, `log_comments`, `log_shares`)과 비율 피처(`like_ratio`, `comment_ratio`)로 heavy-tail 분포를 안정화했습니다.
 
-## 2. 이미지 생성 및 분석
-
-![이미지 생성 및 분석 API](assets/fastapi-slide-09.png)
-
-원본: `service/ai_service.py`
-
-```python
-async def run_image_pipeline(self, request: ImagePipelineRequest) -> ImagePipelineResponse:
-    return await run_in_threadpool(self._run_image_pipeline, request)
-
-def _run_image_pipeline(self, request: ImagePipelineRequest) -> ImagePipelineResponse:
-    image_path = self._generate_image_file(  # 이미지를 생성합니다 / OpenAI image generation model을 호출해서 local artifact를 만들었습니다.
-        prompt=request.prompt,
-        size=request.size
-    )
-    description, cache_hit = self._analyze_image_with_cache(str(image_path))  # 생성된 이미지를 분석합니다 / vision inference 결과를 cache-aware하게 재사용했습니다.
-    uploaded_image = self._upload_image_to_s3(image_path)  # 이미지를 S3에 저장합니다 / object storage에 업로드하고 key와 presigned URL 메타데이터를 확보했습니다.
-
-    return ImagePipelineResponse(
-        image_path=str(image_path),
-        description=description,
-        image_key=uploaded_image["key"],
-        image_url=uploaded_image["url"],
-        file_type=uploaded_image["content_type"],
-        file_size=uploaded_image["size"]
-    )
-```
-
-프롬프트를 받아 이미지를 만들고, 바로 분석한 뒤, S3 key와 presigned URL까지 반환합니다.
-
-## 3. 작품 성과 예측
-
-![작품 성과 예측 API](assets/fastapi-slide-11.png)
+## 3. 분류 모델 (고조회수 여부)
 
 원본: `service/work_service.py`
 
+![분류 데이터 정제 후 분포](chart_images/bideo-분류_chart_2.png)
+![분류 클래스 평균 비교](chart_images/bideo-분류_chart_5.png)
+![분류 임계값별 P/R/F1](chart_images/bideo-분류_chart_22.png)
+![분류 모델 비교 (Base/Tuned/Threshold)](chart_images/bideo-분류_chart_24.png)
+
 ```python
-async def predict_views(self, features: WorkRegressionFeatures) -> WorkRegressionResponse:
-    self.load_work_regressor()  # 예측 모델을 불러옵니다 / joblib/pkl serialized estimator를 lazy-load해서 재사용했습니다.
-
-    feature_dict = features.model_dump()
-    values = [feature_dict[name] for name in self.work_regressor_features]  # 입력값 순서를 맞춥니다 / training schema order에 맞춰 feature vector를 정렬했습니다.
-    prediction = self.work_regressor.predict([values])
-
-    return WorkRegressionResponse(
-        predicted_views=int(prediction[0]),
-        created_datetime=datetime.now(),
-        updated_datetime=datetime.now()
-    )
+# 분류 추론 후 threshold 기준으로 클래스 결정
+prob = self.work_classifier.predict_proba([values])[0][1]
+label = int(prob >= self.classification_threshold)
 ```
 
-회귀 모델은 저장된 pkl과 feature 순서를 맞춰 예상 조회수를 계산하고, 첫 호출 이후에는 메모리 재사용으로 성능을 확보합니다.
+- 기본 분류기보다 튜닝 + threshold 조정 모델이 정밀도/재현율 균형이 안정적입니다.
+- 운영에서는 캠페인 목적에 따라 threshold를 조정합니다.
+  - 노출 확대: recall 우선
+  - 오탐 최소화: precision 우선
 
-## 4. 유사도 추천
+## 4. 회귀 모델 (조회수 예측)
 
-![작품 및 갤러리 추천](assets/fastapi-slide-12.png)
+원본: `service/work_service.py`
+
+![실측 vs 예측](chart_images/Bideo-회귀_chart_4.png)
+![잔차 분포](chart_images/Bideo-회귀_chart_5.png)
+![피처 중요도](chart_images/Bideo-회귀_chart_6.png)
+
+```python
+self.load_work_regressor()
+prediction = self.work_regressor.predict([values])
+return WorkRegressionResponse(predicted_views=int(prediction[0]))
+```
+
+- 실측-예측 그래프로 전체 추세 추종 성능을 검증하고, 잔차 분포로 과대/과소 예측 편향을 점검합니다.
+- 중요도 분석 결과 `like_ratio`, `likes`, `log_likes` 계열이 핵심 설명 변수로 작동합니다.
+
+## 5. 유사도 추천 모델
+
+![작품/갤러리 유사도 추천](assets/fastapi-slide-12.png)
 
 원본: `service/work_recommend_service.py`
 
 ```python
-work_texts = [
-    f"{r['title']} {r['title']} {r['category']} {r['description']} {r['tags']}"
-    for r in rows
-]
-
-tfidf_v = TfidfVectorizer(
-    analyzer="char_wb",     # 한국어 유사도를 계산합니다 / 형태소 분해 대신 character n-gram 기반 vectorizer를 사용했습니다.
-    ngram_range=(2, 4),
-    max_features=6000,
-)
+tfidf_v = TfidfVectorizer(analyzer="char_wb", ngram_range=(2, 4), max_features=6000)
 tfidf_mat = tfidf_v.fit_transform(work_texts)
 query_mat = tfidf_v.transform([request.content])
-sim_scores = cosine_similarity(query_mat, tfidf_mat)[0]  # 추천 점수를 계산합니다 / query-document similarity를 dense score로 산출했습니다.
+sim_scores = cosine_similarity(query_mat, tfidf_mat)[0]
 ```
 
-제목, 설명, 태그를 하나의 텍스트로 합치고, Kiwi 기반 전처리와 TF-IDF 유사도 계산으로 추천 점수를 만듭니다.
+- Kiwi 전처리 + TF-IDF로 한국어 텍스트 유사도를 계산합니다.
+- 콜드스타트 상황에서도 메타데이터 기반 추천이 가능해 초기 사용자 경험을 보완합니다.
 
-## 5. 경매 RAG 분석
+## 6. LLM/RAG 분석 모델
 
-![경매 RAG 분석](assets/fastapi-slide-13.png)
+![경매 LLM/RAG 분석](assets/fastapi-slide-13.png)
 
 원본: `service/auction_rag_service.py`
 
 ```python
-async def analyze(self, request: AuctionRagAnalyzeRequest) -> AuctionRagAnalyzeResponse:
-    if request.fast_mode:
-        return await self._analyze_fast(request)  # 빠른 분석 경로를 사용합니다 / retrieval step을 생략한 low-latency path입니다.
+if request.fast_mode:
+    return await self._analyze_fast(request)
 
-    rag = await self.get_rag()                  # RAG 분석기를 준비합니다 / RAG runtime을 lazy-init하고 connection pool처럼 재사용했습니다.
-    image_data = self._resolve_image_base64(request)
-    image_analysis = await rag.vision_model_func(
-        self._build_image_prompt(request),
-        image_data=image_data,
-    )
-
-    rag_query = self._build_rag_query(request, image_analysis)
-    auction_report = await rag.aquery(rag_query, mode="hybrid")  # 문서 기반 정밀 분석을 수행합니다 / dense/sparse retrieval과 generation을 결합한 hybrid RAG를 사용했습니다.
-
-    return AuctionRagAnalyzeResponse(
-        image_analysis=str(image_analysis),
-        auction_report=str(auction_report),
-        used_rag=True,
-        indexed_document_hint=str(DEFAULT_REPORT_PATH),
-    )
-```
-
-빠른 모드와 RAG 모드를 분리해서, 즉시 응답과 문서 기반 정밀 분석을 모두 지원합니다.
-
-## 6. API 기반 데이터분석 그래프
-
-![API 기반 데이터분석 그래프](assets/fastapi-slide-10.png)
-
-원본: `router/work.py`, `service/work_service.py`
-
-```python
-@router.post("/work/predict-views")
-async def predict_views(features: WorkRegressionFeatures):
-    result = await work_service.predict_views(features)
-    return {"predicted_views": result.predicted_views}
-
-# 프론트/리포트 서버에서 API 응답을 받아 차트 데이터로 변환
-# x축: 날짜, y축: predicted_views 또는 CTR
-```
-
-예측 API 응답을 시간축으로 누적해 조회수 추이 그래프를 만들고, 추천 CTR과 경매 응답시간을 함께 시각화해 의사결정에 사용합니다.
-
-## 7. 데이터 분석/운영
-
-![데이터 분석 및 운영 지표](assets/fastapi-slide-13.png)
-![회귀 성능 분석 1](chart_images/Bideo-회귀_chart_2.png)
-![회귀 성능 분석 2](chart_images/Bideo-회귀_chart_4.png)
-![분류 성능 분석](chart_images/bideo-분류_chart_3.png)
-
-원본: `service/work_service.py`, `service/work_recommend_service.py`, `service/auction_rag_service.py`
-
-```python
-prediction = self.work_regressor.predict([values])
-sim_scores = cosine_similarity(query_mat, tfidf_mat)[0]
+rag_query = self._build_rag_query(request, image_analysis)
 auction_report = await rag.aquery(rag_query, mode="hybrid")
 ```
 
-운영에서는 예측값 정확도(MAE/RMSE), 추천 반응률(CTR), RAG 응답시간/재현율 같은 지표를 함께 보며 모델과 프롬프트를 반복 개선합니다.
-회귀 그래프는 예측값-실측값 오차를 검증하고, 분류 그래프는 클래스별 편향 여부를 확인해 feature와 전처리를 개선하는 기준으로 사용합니다.
+- `fast_mode`: 검색 단계를 줄여 응답속도 우선.
+- `hybrid RAG`: 문서 근거 기반으로 가격 매력도, ROI 시나리오, 입찰 전략을 상세 생성.
 
-## 8. 발표 흐름 요약
+## 7. 모델 비교 및 운영 적용
 
-1. 기획 단계에서 AI 기능을 FastAPI로 분리하고 기능별 라우터를 설계했습니다.
-2. 이미지 생성은 생성, 분석, S3 저장을 한 번에 묶어 처리합니다.
-3. 작품 예측은 저장된 pkl 모델과 feature 순서를 그대로 사용합니다.
-4. 추천은 텍스트 유사도 기반으로 후보를 정렬합니다.
-5. 경매 분석은 빠른 모드와 RAG 정밀 모드를 분리했습니다.
-6. API 응답을 그래프로 시각화해 기능별 성과를 비교합니다.
-7. 운영 단계에서 정확도/반응률/지연시간 지표로 지속 개선합니다.
+| 기능 | 적용 모델 | 선택 이유 | 핵심 운영 지표 |
+|---|---|---|---|
+| 조회수 예측 | LGBM Regressor (`bideo_regressor.pkl`) | 비선형 관계/스케일 차이를 안정적으로 학습 | MAE, RMSE, 잔차 왜도 |
+| 고조회수 분류 | RF 계열 + threshold 조정 (`bideo_classifier.pkl`) | precision/recall 트레이드오프 제어 용이 | Precision, Recall, F1 |
+| 콘텐츠 추천 | Kiwi + TF-IDF + Cosine | 실시간성/해석성/콜드스타트 대응 | CTR, 저장률, 재방문율 |
+| 경매 분석 | Vision + LLM + Hybrid RAG | 근거 문서 기반 설명 가능 | 응답시간, 근거 일치율, 사용자 채택률 |
 
+### API 기반 운영 대시보드 포인트
+
+- 예측 API: `/api/work/regression` 응답을 일별 집계해 조회수 예측 추이 관리
+- 분류 API: `/api/work/classification` 결과를 임계값별 precision/recall 리포트로 관리
+- 추천 API: `/api/gallery/recommend`, `/api/work/recommend` CTR/전환율 모니터링
+- RAG API: `/api/auction/rag/analyze` 응답시간/피드백 점수 모니터링
+
+## 발표 마무리 한 줄
+
+기획 데이터로 문제를 정의하고, 데이터셋/피처를 설계한 뒤, 분류·회귀·유사도·LLM/RAG를 기능별로 분리 적용해 BIDEO 서비스의 실제 의사결정과 수익 흐름에 연결한 구조입니다.
