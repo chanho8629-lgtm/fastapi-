@@ -1,29 +1,52 @@
-# BIDEO 발표 문서
+# BIDEO 발표 자료
 
-이 저장소의 발표용 문서는 아래 파일에서 바로 확인할 수 있습니다.
+이 저장소는 **BIDEO 프로젝트 발표 문서**를 GitHub README에서 바로 볼 수 있게 정리한 버전입니다.
 
-## FastAPI AI 핵심 코드 발표
+## 바로 보기
 
-- 문서: [FastAPI_AI_핵심코드_발표.md](./FastAPI_AI_핵심코드_발표.md)
-- 이미지 폴더: [`images/`](./images)
+- [FastAPI_AI_핵심코드_발표.md](./FastAPI_AI_핵심코드_발표.md)
+- [BIDEO_웹서비스_핵심코드_발표.md](./BIDEO_웹서비스_핵심코드_발표.md)
 
-### 미리보기
+## 1. 기획 배경: 데이터로 본 문제
 
-![기획 배경 - 시장 성장](images/data-bideo-market-growth.png)
-한 줄 해설: 콘텐츠 시장 성장 데이터를 기반으로 서비스 타당성을 검증했습니다.
+### 분석 질문
 
-![회귀 EDA - 상관행렬](images/regression_eda_corr.png)
-한 줄 해설: 조회수와 반응 지표 간의 상관관계를 확인해 피처를 설계했습니다.
+| 질문 | 확인하려는 내용 |
+|---|---|
+| 숏폼/모바일 영상 소비 비중은 충분히 큰가? | BIDEO 핵심 사용자층 규모 확인 |
+| 사용자들이 영상 콘텐츠에 비용을 지불하는 흐름이 있는가? | 경매/결제 기능 확장 가능성 확인 |
+| 창작자 수익 구조가 상위 집중인지, 개선 여지가 있는가? | 수익 다변화 기능 필요성 확인 |
 
-![분류 모델 - 임계값 비교](images/classification_prf_threshold.png)
-한 줄 해설: threshold 조정으로 precision/recall 균형을 운영 목적에 맞게 선택합니다.
+### 사용 데이터
 
-![회귀 모델 - 실측 vs 예측](images/regression_actual_vs_pred.png)
-한 줄 해설: 실측 대비 예측 추세를 비교해 모델 적용 가능성을 확인합니다.
+| 데이터 | 출처 | 사용 목적 |
+|---|---|---|
+| 국내 콘텐츠산업 매출 추이(2020~2024) | 콘텐츠산업 통계/정리 데이터 | 시장 성장성 확인 |
+| OTT 이용률 및 유료 이용 비율 추이 | 미디어 이용 통계/정리 데이터 | 결제 기반 서비스 수용도 확인 |
+| 모바일·숏폼 콘텐츠 이용률 | 디지털 미디어 이용 통계/정리 데이터 | 피드형 UX/추천 기능 근거 확보 |
+| 1인 창작자 수익 분포(상위 집중도) | 창작자 경제 통계/정리 데이터 | 창작자 수익화 문제 검증 |
 
-![LLM/RAG 분석](images/fastapi-slide-13.png)
-한 줄 해설: fast 모드와 hybrid RAG를 분리해 속도/정밀도 요구를 동시에 대응합니다.
+## 2. 핵심 그래프
 
-## 웹서비스 핵심 코드 발표
+![콘텐츠 시장 성장](images/data-bideo-market-growth.png)
+한 줄 해설: 콘텐츠 시장이 꾸준히 성장해 서비스 진입 근거가 됩니다.
 
-- 문서: [BIDEO_웹서비스_핵심코드_발표.md](./BIDEO_웹서비스_핵심코드_발표.md)
+![OTT 이용률/유료 이용](images/data-bideo-usage-rate.png)
+한 줄 해설: OTT 이용과 유료 전환이 증가해 결제 기능 수요를 뒷받침합니다.
+
+![모바일/숏폼 소비 구조](images/data-bideo-mobile-content-core.png)
+한 줄 해설: 모바일·숏폼 중심 소비가 피드형 UX 전략과 맞습니다.
+
+![창작자 수익 집중 문제](images/data-bideo-creator-problem-summary.png)
+한 줄 해설: 수익 집중 구조를 완화할 수익 다변화 기능이 필요합니다.
+
+## 3. 모델 분석 미리보기
+
+![회귀 EDA 상관행렬](images/regression_eda_corr.png)
+한 줄 해설: 조회수와 반응 지표 간 상관관계로 핵심 피처를 선정했습니다.
+
+![분류 임계값 비교](images/classification_prf_threshold.png)
+한 줄 해설: 임계값 조정으로 precision/recall을 운영 목적에 맞게 조절합니다.
+
+![회귀 실측 vs 예측](images/regression_actual_vs_pred.png)
+한 줄 해설: 실측 추세를 따라가는 예측 성능을 확인했습니다.
