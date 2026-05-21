@@ -128,11 +128,3 @@ async def analyze(self, request: AuctionRagAnalyzeRequest) -> AuctionRagAnalyzeR
 ```
 
  빠른 모드와 RAG 모드를 분리해서, 즉시 응답과 문서 기반 정밀 분석을 모두 지원합니다.
-
-## 발표 흐름 요약
-
-1. FastAPI는 Spring이 호출하는 AI 전용 백엔드입니다.
-2. 이미지 생성은 생성, 분석, S3 저장을 한 번에 묶어 처리합니다.
-3. 작품 예측은 저장된 pkl 모델과 feature 순서를 그대로 사용합니다.
-4. 추천은 텍스트 유사도 기반으로 후보를 정렬합니다.
-5. 경매 RAG는 빠른 분석과 문서 기반 정밀 분석을 분리합니다.
